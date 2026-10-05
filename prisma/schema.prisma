@@ -1,0 +1,78 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+// --- ENUMS (Статусы) ---
+enum DropStatus {
+  DRAFT     // Дроп готовится, еще не доступен для покупки
+  LIVE      // Продажи открыты
+  ARCHIVED  // Дроп завершен (все вещи проданы или время вышло)
+}
+
+enum OrderStatus {
+  NEW        // Новая заявка, ждет оплаты
+  PAID       // Оплачено, готовим к отправке
+  SHIPPED    // Отправлено клиенту
+  CANCELLED  // Отменено (клиент передумал или не вышел на связь)
+}
+
+// --- МОДЕЛИ (Таблицы) ---
+
+model Drop {
+  id          String      @id @default(uuid())
+  title       String      // Название дропа, например: "Дроп 01: Черновик"
+  description String?     // Описание концепции коллекции
+  startDate   DateTime    // Дата и время старта продаж
+  status      DropStatus  @default(DRAFT)
+  createdAt   DateTime    @default(now())
+  
+  items       Item[]      // Связь: один дроп содержит много вещей
+  
+  @@map("drops")
+}
+
+model Item {
+  id            String   @id @default(uuid())
+  dropId        String
+  drop          Drop     @relation(fields: [dropId], references: [id], onDelete: Cascade)
+  
+  name          String   // Название вещи
+  description   String   // Описание, состав, история
+  price         Int      // Цена в рублях (целое число)
+  stock         Int      @default(1) // Количество доступных штук
+  images        String[] // Массив URL фотографий
+  measurements  Json?    // Мерки в формате JSON: {"chest": "120 см", "length": "70 см"}
+  isSold        Boolean  @default(false) // Быстро помечать проданные вещи
+  
+  orders        Order[]  // Связь: на одну вещь может быть много заказов (история)
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@map("items")
+}
+
+model Order {
+  id                String      @id @default(uuid())
+  itemId            String
+  item              Item        @relation(fields: [itemId], references: [id])
+  
+  customerName      String      // Имя клиента
+  telegramUsername  String      // Telegram для связи (например: @username)
+  status            OrderStatus @default(NEW)
+  createdAt         DateTime    @default(now())
+  
+  @@map("orders")
+}
