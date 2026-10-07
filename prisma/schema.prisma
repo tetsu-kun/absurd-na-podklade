@@ -22,11 +22,21 @@ enum DropStatus {
 }
 
 enum OrderStatus {
-  NEW        // Новая заявка, ждет оплаты
-  PAID       // Оплачено, готовим к отправке
-  SHIPPED    // Отправлено клиенту
-  CANCELLED  // Отменено (клиент передумал или не вышел на связь)
+  NEW
+  RESERVED
+  PAID
+  SHIPPED
+  COMPLETED
+  CANCELLED
 }
+
+// Добавь этот enum выше модели Item (например, после enum OrderStatus)
+enum ItemCategory {
+  CLOTHING
+  ART
+  ACCESSORY
+}
+
 
 // --- МОДЕЛИ (Таблицы) ---
 
@@ -44,23 +54,24 @@ model Drop {
 }
 
 model Item {
-  id            String   @id @default(uuid())
-  dropId        String
-  drop          Drop     @relation(fields: [dropId], references: [id], onDelete: Cascade)
+  id          String        @id @default(uuid())
+  name        String
+  description String
+  price       Int
+  stock       Int           @default(1)
+  images      String[]      // Массив URL картинок
+  measurements Json?        // Можно использовать и для одежды (груди/талия), и для арт (ширина/высота холста)
   
-  name          String   // Название вещи
-  description   String   // Описание, состав, история
-  price         Int      // Цена в рублях (целое число)
-  stock         Int      @default(1) // Количество доступных штук
-  images        String[] // Массив URL фотографий
-  measurements  Json?    // Мерки в формате JSON: {"chest": "120 см", "length": "70 см"}
-  isSold        Boolean  @default(false) // Быстро помечать проданные вещи
-  
-  orders        Order[]  // Связь: на одну вещь может быть много заказов (история)
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
+  // НОВОЕ ПОЛЕ: Категория товара
+  category    ItemCategory  @default(CLOTHING)
+
+  dropId      String
+  drop        Drop          @relation(fields: [dropId], references: [id])
+  orders      Order[]
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
   @@map("items")
 }
 
@@ -69,10 +80,20 @@ model Order {
   itemId            String
   item              Item        @relation(fields: [itemId], references: [id])
   
-  customerName      String      // Имя клиента
-  telegramUsername  String      // Telegram для связи (например: @username)
+  customerName      String
+  telegramUsername  String
+  
   status            OrderStatus @default(NEW)
+  
+  // Временные метки этапов
+  reservedAt        DateTime?
+  paidAt            DateTime?
+  shippedAt         DateTime?
+  completedAt       DateTime?
+  cancelledAt       DateTime?
+  
   createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt @default(now())
   
   @@map("orders")
 }

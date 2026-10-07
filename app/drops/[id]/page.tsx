@@ -1,3 +1,4 @@
+import OrderForm from './OrderForm'
 import { PrismaClient } from '@prisma/client'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
@@ -90,31 +91,14 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
               </div>
             )}
 
-            {/* Статус и кнопка */}
+            {/* Статус и форма заказа (ЗДЕСЬ БЫЛА ОШИБКА, ТЕПЕРЬ ВСЁ ЧИСТО) */}
             <div className="mt-auto pt-6">
-              {item.stock > 0 && !item.isSold ? (
-                <div className="flex items-center gap-4">
-                  <span className="text-sm font-bold uppercase bg-black text-white px-4 py-3">
-                    В наличии: {item.stock} шт.
-                  </span>
-                  {/* Пока просто ссылка на ТГ, позже сделаем форму заказа */}
-                  <a 
-                    href="https://t.me/your_username" 
-                    target="_blank"
-                    className="flex-1 bg-white text-black border-2 border-black px-6 py-3 font-black uppercase text-center hover:bg-black hover:text-white transition-colors"
-                  >
-                    Забрать в ТГ
-                  </a>
-                </div>
-              ) : (
-                <div className="text-xl font-bold uppercase bg-gray-200 text-gray-500 px-6 py-3 text-center border-2 border-gray-300">
-                  Sold Out
-                </div>
-              )}
+              <OrderForm itemId={item.id} stock={item.stock} />
             </div>
-          </div>
-        </div>
-      </div>
+
+          </div> {/* Закрываем ПРАВУЮ КОЛОНКУ */}
+        </div> {/* Закрываем GRID */}
+      </div> {/* Закрываем max-w-6xl */}
     </main>
   )
 }

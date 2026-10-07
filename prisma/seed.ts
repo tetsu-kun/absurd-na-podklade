@@ -13,6 +13,23 @@ async function main() {
       startDate: new Date(),
       status: 'LIVE',
     },
+
+
+
+    {
+      name: 'Картина "Экзистенциальный холст"',
+      description: 'Акрил, масло и слезы дизайнера на холсте. Не рекомендуется вешать в спальне.',
+      price: 15000,
+      stock: 1,
+      images: ['https://placehold.co/600x800/1a1a1a/FFF?text=ART+PIECE'],
+      category: 'ART', // <-- Указываем категорию
+      measurements: {
+        width: '50 см',
+        height: '70 см',
+        material: 'Холст, масло, экзистенциальная тоска'
+      }
+    },
+    
   })
   console.log(`✅ Создан дроп: ${drop.title}`)
 
