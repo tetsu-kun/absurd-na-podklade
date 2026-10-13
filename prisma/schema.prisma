@@ -79,10 +79,9 @@ model Order {
   id                String      @id @default(uuid())
   itemId            String
   item              Item        @relation(fields: [itemId], references: [id])
-  
   customerName      String
   telegramUsername  String
-  
+  phone             String?      // 
   status            OrderStatus @default(NEW)
   
   // Временные метки этапов

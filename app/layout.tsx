@@ -1,36 +1,42 @@
-import type { Metadata } from "next";
-import "./globals.css";
+import type { Metadata } from 'next'
+import { Unbounded, JetBrains_Mono } from 'next/font/google'
+import Header from '@/components/Header'
+import Footer from '@/components/Footer'
+import './globals.css'
+
+const unbounded = Unbounded({
+  subsets: ['cyrillic', 'latin'],
+  weight: ['400', '700', '900'],
+  variable: '--font-unbounded',
+  display: 'swap',
+})
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['cyrillic', 'latin'],
+  weight: ['400', '500', '700'],
+  variable: '--font-mono',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
-  title: "АБСУРД НА ПОДКЛАДЕ",
-  description: "Кастомная одежда с характером",
-};
+  title: 'АБСУРД НА ПОДКЛАДЕ',
+  description: 'Лимитированные дропы одежды, арт-объектов и аксессуаров.',
+}
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: {
+  children: React.ReactNode
+}) {
   return (
-    <html lang="ru">
-      <body>
-        {/* Навигация */}
-        <nav className="border-b-2 border-black p-4 font-mono">
-          <div className="max-w-6xl mx-auto flex justify-between items-center">
-            <a href="/" className="text-xl font-black uppercase">
-              АНП
-            </a>
-            <div className="flex gap-6">
-              <a href="/" className="hover:underline">О бренде</a>
-              <a href="/drops" className="hover:underline">Дропы</a>
-              <a href="/archive" className="hover:underline">Архив</a>
-            </div>
-          </div>
-        </nav>
-        
-        {/* Основной контент */}
-        {children}
+    <html lang="ru" className={`${unbounded.variable} ${jetbrainsMono.variable}`}>
+      <body className="antialiased min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-grow">
+          {children}
+        </main>
+        <Footer />
       </body>
     </html>
-  );
+  )
 }

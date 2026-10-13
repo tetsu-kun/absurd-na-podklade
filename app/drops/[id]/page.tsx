@@ -1,104 +1,111 @@
-import OrderForm from './OrderForm'
 import { PrismaClient } from '@prisma/client'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import Breadcrumbs from '@/components/Breadcrumbs'
+import OrderForm from './OrderForm'
+import ProductGallery from '@/components/ProductGallery'
 
 const prisma = new PrismaClient()
 
-// В Next.js 15 params — это Promise, поэтому используем await
 export default async function ItemPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 
-  // 1. Ищем вещь по ID и подтягиваем данные её Дропа (для хлебных крошек)
   const item = await prisma.item.findUnique({
     where: { id },
-    include: { drop: true },
+    include: { drop: true }
   })
 
-  // Если вещь не найдена (например, неверный ID в URL), показываем 404
   if (!item) {
     notFound()
   }
 
-  // Парсим мерки из JSON
+  const isSoldOut = item.stock <= 0
   const measurements = item.measurements as Record<string, string> | null
 
-  return (
-    <main className="min-h-screen bg-white text-black p-4 md:p-12 font-mono">
-      <div className="max-w-6xl mx-auto">
-        
-        {/* Навигация назад */}
-        <Link href="/drops" className="inline-block mb-8 text-sm font-bold uppercase hover:underline">
-          ← Назад к дропам
-        </Link>
+  const categoryLabel = 
+    item.category === 'ART' ? 'АРТ-ОБЪЕКТ' : 
+    item.category === 'ACCESSORY' ? 'АКСЕССУАР' : 'ОДЕЖДА'
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16">
+  return (
+    <>
+      {/* Хлебные крошки */}
+      <Breadcrumbs 
+        items={[
+          { label: 'Дропы', href: '/drops' },
+          { label: item.drop.title, href: `/drop/${item.dropId}` },
+          { label: item.name }
+        ]} 
+      />
+
+      {/* Асимметричная двухколоночная сетка */}
+      <section className="grid gap-4 border-b-2 border-brand-black p-4 lg:grid-cols-[0.45fr_0.55fr] lg:p-6">
+        
+        {/* ЛЕВАЯ КОЛОНКА: Галерея (45%) */}
+        <ProductGallery 
+          images={item.images}
+          dropTitle={item.drop.title}
+          itemName={item.name}
+        />
+
+        {/* ПРАВАЯ КОЛОНКА: Информация (55%) */}
+        <div className="flex flex-col overflow-hidden rounded-soft border-2 border-brand-black bg-paper shadow-card">
           
-          {/* ЛЕВАЯ КОЛОНКА: ГАЛЕРЕЯ */}
-          <div className="space-y-4">
-            {/* Главное фото */}
-            <div className="aspect-[3/4] bg-gray-200 border-4 border-black overflow-hidden">
-              <img 
-                src={item.images[0]} 
-                alt={item.name} 
-                className="w-full h-full object-cover"
-              />
-            </div>
+          {/* Шапка с названием и ценой */}
+          <div className="border-b-2 border-brand-black p-6 md:p-8">
+            <p className="font-mono text-xs font-bold text-brand-blue">
+              {categoryLabel}
+            </p>
             
-            {/* Миниатюры (если есть больше 1 фото) */}
-            {item.images.length > 1 && (
-              <div className="grid grid-cols-4 gap-2">
-                {item.images.map((img, index) => (
-                  <div key={index} className="aspect-square bg-gray-200 border-2 border-black overflow-hidden">
-                    <img src={img} alt={`${item.name} view ${index + 1}`} className="w-full h-full object-cover" />
+            <h1 className="mt-3 font-display text-3xl font-black leading-none tracking-tight md:text-5xl">
+              {item.name}
+            </h1>
+
+            <p className={`mt-6 font-display text-2xl font-black md:text-3xl ${
+              isSoldOut ? 'text-brand-ink-muted' : 'text-brand-red'
+            }`}>
+              {isSoldOut ? 'ПРОДАНО' : `${item.price.toLocaleString()} ₽`}
+            </p>
+          </div>
+
+          {/* Описание */}
+          <div className="border-b-2 border-brand-black p-6 md:p-8">
+            <p className="font-mono text-xs font-bold">О ВЕЩИ</p>
+            <p className="mt-3 text-sm leading-relaxed md:text-base">
+              {item.description}
+            </p>
+
+            {/* Характеристики */}
+            {measurements && Object.keys(measurements).length > 0 && (
+              <div className="mt-6 grid grid-cols-2 gap-2 font-mono text-xs">
+                {Object.entries(measurements).map(([key, value]) => (
+                  <div key={key} className="rounded-soft border-2 border-brand-black bg-paper p-3">
+                    <span className="text-brand-ink-muted uppercase">{key}</span>
+                    <br />
+                    <span className="font-bold">{value}</span>
                   </div>
                 ))}
               </div>
             )}
           </div>
 
-          {/* ПРАВАЯ КОЛОНКА: ИНФОРМАЦИЯ */}
-          <div className="flex flex-col">
-            {/* Хлебные крошки */}
-            <p className="text-sm text-gray-500 uppercase mb-2">
-              {item.drop.title} / {item.name}
-            </p>
-
-            <h1 className="text-4xl md:text-5xl font-black uppercase leading-tight mb-4">
-              {item.name}
-            </h1>
-
-            <p className="text-3xl font-bold mb-8">{item.price.toLocaleString()} ₽</p>
-
-            <div className="text-lg leading-relaxed mb-8 border-t-2 border-b-2 border-black py-6">
-              {item.description}
+          {/* Форма заказа или блок "Продано" */}
+          {isSoldOut ? (
+            <div className="bg-brand-black p-6 text-white md:p-8">
+              <p className="font-display text-2xl font-black md:text-3xl">
+                ЭТА ВЕЩЬ ЗАКОНЧИЛАСЬ.
+              </p>
+              <Link 
+                href="/drops"
+                className="mt-4 inline-block border-2 border-white bg-transparent px-4 py-2 font-display text-xs font-black text-white transition-colors hover:bg-white hover:text-brand-black"
+              >
+                СМОТРЕТЬ НОВОЕ
+              </Link>
             </div>
-
-            {/* Блок мерок */}
-            {measurements && Object.keys(measurements).length > 0 && (
-              <div className="mb-8">
-                <h3 className="text-xl font-bold uppercase mb-4">Мерки изделия:</h3>
-                <div className="bg-gray-100 p-6 border-2 border-black">
-                  <ul className="space-y-3">
-                    {Object.entries(measurements).map(([key, value]) => (
-                      <li key={key} className="flex justify-between border-b border-gray-300 pb-2 last:border-0">
-                        <span className="text-gray-600 uppercase text-sm">{key}:</span>
-                        <span className="font-bold">{value}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            )}
-
-            {/* Статус и форма заказа (ЗДЕСЬ БЫЛА ОШИБКА, ТЕПЕРЬ ВСЁ ЧИСТО) */}
-            <div className="mt-auto pt-6">
-              <OrderForm itemId={item.id} stock={item.stock} />
-            </div>
-
-          </div> {/* Закрываем ПРАВУЮ КОЛОНКУ */}
-        </div> {/* Закрываем GRID */}
-      </div> {/* Закрываем max-w-6xl */}
-    </main>
+          ) : (
+            <OrderForm itemId={item.id} />
+          )}
+        </div>
+      </section>
+    </>
   )
 }

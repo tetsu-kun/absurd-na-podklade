@@ -7,48 +7,54 @@ import { revalidatePath } from 'next/cache'
 const prisma = new PrismaClient()
 
 // 1. Создание заказа (статус NEW, stock НЕ меняется)
-export async function createOrder(formData: FormData) {
+export async function createOrder(prevState: any, formData: FormData) {
   const itemId = formData.get('itemId') as string
   const customerName = formData.get('customerName') as string
   const telegramUsername = formData.get('telegramUsername') as string
+  const phone = formData.get('phone') as string
 
-  if (!itemId || !customerName || !telegramUsername) {
-    return { error: 'Все поля обязательны для заполнения' }
+  // Валидация
+  if (!itemId || !customerName || !telegramUsername || !phone) {
+    return { error: 'Заполни все поля' }
   }
 
   try {
-    const item = await prisma.item.findUnique({ where: { id: itemId } })
-    if (!item || item.stock <= 0) {
-      return { error: 'Эта вещь уже закончилась' }
-    }
-
-    await prisma.order.create({
-      data: {
-        itemId,
-        customerName,
-        telegramUsername,
-        status: 'NEW',
-      },
+    // Проверяем, есть ли вещь в наличии
+    const item = await prisma.item.findUnique({
+      where: { id: itemId },
     })
 
-    // 🔥 Уведомление о новом заказе
-    const notification = formatNewOrderNotification(
-      customerName,
-      telegramUsername,
-      item.name,
-      item.price,
-      itemId // Используем itemId как временный ID для уведомления, реальный ID заказа мы не сохраняем в переменной здесь, но для уведомления сойдет
-    )
-    await sendTelegramMessage(notification)
+    if (!item) {
+      return { error: 'Вещь не найдена' }
+    }
 
-    revalidatePath(`/drops/${itemId}`)
-    revalidatePath('/drops')
-    revalidatePath('/admin/orders')
+    if (item.stock <= 0) {
+      return { error: 'Вещь закончилась' }
+    }
 
-    return { success: 'Заявка отправлена! Мы свяжемся с вами для подтверждения.' }
+    // Создаем заказ и уменьшаем stock в одной транзакции
+    await prisma.$transaction([
+      prisma.order.create({
+        data: {
+          itemId,
+          customerName,
+          telegramUsername,
+          phone,
+          status: 'NEW',
+        },
+      }),
+      prisma.item.update({
+        where: { id: itemId },
+        data: {
+          stock: { decrement: 1 },
+        },
+      }),
+    ])
+
+    return { success: 'Заявка отправлена! Скоро напишем в Telegram.' }
   } catch (error) {
-    console.error('Ошибка при создании заказа:', error)
-    return { error: 'Произошла ошибка' }
+    console.error('Error creating order:', error)
+    return { error: 'Ошибка при создании заказа' }
   }
 }
 

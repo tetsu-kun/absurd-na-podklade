@@ -1,5 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import Link from 'next/link'
+import ItemCard from '@/components/ItemCard'
+import Marquee from '@/components/Marquee'
 
 const prisma = new PrismaClient()
 
@@ -7,17 +9,11 @@ export default async function DropsPage() {
   const drops = await prisma.drop.findMany({
     where: {
       status: { not: 'ARCHIVED' },
-      items: {
-        some: {
-          stock: { gt: 0 }
-        }
-      }
+      items: { some: { stock: { gt: 0 } } }
     },
     include: {
       items: {
-        where: {
-          stock: { gt: 0 }
-        },
+        where: { stock: { gt: 0 } },
         orderBy: { createdAt: 'asc' }
       }
     },
@@ -25,65 +21,82 @@ export default async function DropsPage() {
   })
 
   return (
-    <main className="min-h-screen bg-white text-black p-4 md:p-12 font-mono">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-4xl md:text-6xl font-black uppercase mb-8 border-b-4 border-black pb-4">
-          Активные дропы
-        </h1>
-
-        {drops.length === 0 ? (
-          <div className="border-2 border-black p-8 text-center">
-            <p className="text-xl font-bold uppercase">Пока нет активных дропов</p>
-            <p className="text-gray-600 mt-2">Здесь будут появляться новые коллекции</p>
+    <>
+      {/* HERO ДРОПОВ */}
+      <section className="border-b-2 border-brand-black px-4 py-12 md:px-8 md:py-20">
+        <div className="max-w-7xl mx-auto">
+          <p className="font-mono text-xs font-bold uppercase tracking-wider text-brand-red">
+            АКТУАЛЬНЫЕ КОЛЛЕКЦИИ
+          </p>
+          <div className="mt-5 flex flex-col justify-between gap-8 md:flex-row md:items-end">
+            <h1 className="font-display text-[60px] font-black tracking-tight md:text-[96px]">
+              ДРОПЫ
+            </h1>
+            <p className="max-w-md border-l-4 border-brand-blue pl-4 text-sm leading-relaxed">
+              Каждый дроп — законченная история из одежды, аксессуаров и объектов. 
+              Вещи не повторяются после окончания тиража.
+            </p>
           </div>
-        ) : (
-          drops.map((drop) => (
-            <section key={drop.id} className="mb-16">
-              <Link href={`/drop/${drop.id}`} className="group inline-block">
-                <h2 className="text-3xl font-bold uppercase mb-2 group-hover:underline decoration-4 underline-offset-4">
-                  {drop.title} ↗
-                </h2>
+        </div>
+      </section>
+
+      {/* СПИСОК ДРОПОВ */}
+      {drops.length === 0 ? (
+        <div className="border-b-2 border-brand-black p-12 text-center">
+          <p className="font-display text-xl font-black uppercase">
+            Пока нет активных дропов
+          </p>
+        </div>
+      ) : (
+        drops.map((drop, dropIndex) => {
+          // Определяем количество колонок
+          const colsClass = 
+            drop.items.length === 1 ? 'grid-cols-1 max-w-md mx-auto' :
+            drop.items.length === 2 ? 'grid-cols-1 md:grid-cols-2' :
+            drop.items.length === 3 ? 'grid-cols-1 md:grid-cols-3' :
+            'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+
+          // Цвет дропа чередуется
+          const bannerColor = dropIndex % 2 === 0 ? 'hover:bg-brand-red' : 'hover:bg-brand-blue'
+
+          return (
+            <section key={drop.id} className="border-b-2 border-brand-black p-4 md:p-6">
+              
+              {/* Баннер дропа */}
+              <Link 
+                href={`/drop/${drop.id}`}
+                className={`group mb-6 grid w-full overflow-hidden rounded-soft border-2 border-brand-black text-left shadow-card transition-all hover:-translate-y-0.5 ${bannerColor} hover:text-white`}
+              >
+                <div className="p-5 md:p-8">
+                  <p className="font-mono text-xs font-bold">
+                    {dropIndex + 1} / {new Date(drop.startDate).getFullYear()}
+                  </p>
+                  <h2 className="mt-3 font-display text-3xl font-black md:text-5xl">
+                    {drop.title}
+                  </h2>
+                  {drop.description && (
+                    <p className="mt-3 text-sm opacity-80">
+                      {drop.description}
+                    </p>
+                  )}
+                </div>
+                <div className="hidden md:grid w-28 place-items-center border-l-2 border-current font-mono text-2xl">
+                  →
+                </div>
               </Link>
-              <p className="text-gray-700 mb-6">{drop.description}</p>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {drop.items.map((item) => (
-                  // 🟢 ИЗМЕНЕНИЕ 1: Добавили 'relative' в конец className
-                  <article key={item.id} className="border-2 border-black p-4 relative">
-                    
-                    {/* 🟢 ИЗМЕНЕНИЕ 2: Добавили блок с бейджем категории */}
-                    <div className="absolute top-2 left-2 z-10">
-                      <span className={`text-[10px] md:text-xs font-black uppercase px-2 py-1 border-2 border-black ${
-                        item.category === 'ART' ? 'bg-purple-200' : 
-                        item.category === 'ACCESSORY' ? 'bg-yellow-200' : 'bg-white'
-                      }`}>
-                        {item.category === 'ART' ? 'Картина' : 
-                         item.category === 'ACCESSORY' ? 'АКСЕССУАР' : 'ОДЕЖДА'}
-                      </span>
-                    </div>
-
-                    <div className="aspect-[3/4] bg-gray-200 mb-4 border-2 border-black">
-                      <img src={item.images[0]} alt={item.name} className="w-full h-full object-cover" />
-                    </div>
-                    <h3 className="text-xl font-bold uppercase mb-2">{item.name}</h3>
-                    <p className="text-sm text-gray-700 mb-3">{item.description}</p>
-                    <div className="flex justify-between items-center mb-4">
-                      <span className="text-2xl font-bold">{item.price.toLocaleString()} ₽</span>
-                      <span className="text-sm font-bold">В наличии: {item.stock}</span>
-                    </div>
-                    <Link 
-                      href={`/drops/${item.id}`} 
-                      className="block w-full bg-black text-white py-3 font-bold uppercase text-center hover:bg-gray-800"
-                    >
-                      Смотреть вещь
-                    </Link>
-                  </article>
+              {/* Сетка товаров - ВСЕГДА 3 В РЯД */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {drop.items.map((item, idx) => (
+                  <ItemCard key={item.id} item={item} index={idx} />
                 ))}
               </div>
             </section>
-          ))
-        )}
-      </div>
-    </main>
+          )
+        })
+      )}
+
+      <Marquee />
+    </>
   )
 }
