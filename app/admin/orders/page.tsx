@@ -1,6 +1,7 @@
 import { PrismaClient, OrderStatus } from '@prisma/client'
 import { updateOrderStatus } from '@/actions'
 import Link from 'next/link'
+export const dynamic = 'force-dynamic'
 
 const prisma = new PrismaClient()
 

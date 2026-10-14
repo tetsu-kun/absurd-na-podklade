@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react'
 import { loginAction } from './actions'
+export const dynamic = 'force-dynamic'
 
 export default function LoginPage() {
   // useActionState обрабатывает возврат { error: '...' } из Server Action
