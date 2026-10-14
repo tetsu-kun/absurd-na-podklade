@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import Link from 'next/link'
 import Marquee from '@/components/Marquee'
+export const dynamic = 'force-dynamic'
 
 const prisma = new PrismaClient()
 

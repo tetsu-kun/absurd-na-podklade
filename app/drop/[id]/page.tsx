@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import ItemCard from '@/components/ItemCard'
 import Breadcrumbs from '@/components/Breadcrumbs'
 import Marquee from '@/components/Marquee'
+export const dynamic = 'force-dynamic'
 
 const prisma = new PrismaClient()
 

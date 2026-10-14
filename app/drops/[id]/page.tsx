@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Breadcrumbs from '@/components/Breadcrumbs'
 import OrderForm from './OrderForm'
 import ProductGallery from '@/components/ProductGallery'
+export const dynamic = 'force-dynamic'
 
 const prisma = new PrismaClient()
 
