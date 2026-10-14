@@ -13,26 +13,29 @@ async function main() {
       startDate: new Date(),
       status: 'LIVE',
     },
+  })
+  console.log(`✅ Создан дроп: ${drop.title}`)
 
-
-    {
+  // 2. Добавляем КАРТИНУ (исправлено: теперь это отдельный вызов create)
+  const artPiece = await prisma.item.create({
+    data: {
+      dropId: drop.id,
       name: 'Картина "Экзистенциальный холст"',
       description: 'Акрил, масло и слезы дизайнера на холсте. Не рекомендуется вешать в спальне.',
       price: 15000,
       stock: 1,
-      images: ['https://placehold.co/600x800/1a1a1a/FFF?text=ART+PIECE'],
-      category: 'ART', // <-- Указываем категорию
+      images: ['https://placehold.co/600x800/1a1a1a/FFF?text=ART'],
+      category: 'ART',
       measurements: {
         width: '50 см',
         height: '70 см',
         material: 'Холст, масло, экзистенциальная тоска'
       }
-    },
-
+    }
   })
-  console.log(`✅ Создан дроп: ${drop.title}`)
+  console.log(`✅ Добавлена вещь: ${artPiece.name}`)
 
-  // 2. Добавляем ФУТБОЛКУ
+  // 3. Добавляем ФУТБОЛКУ (исправлено: убрано несуществующее поле isSold)
   const tshirt = await prisma.item.create({
     data: {
       dropId: drop.id,
@@ -42,21 +45,19 @@ async function main() {
       stock: 5,
       images: [
         'https://placehold.co/600x800/1a1a1a/FFF?text=T-Shirt+Front',
-        'https://placehold.co/600x800/1a1a1a/FFF?text=T-Shirt+Back+Text'
+        'https://placehold.co/600x800/1a1a1a/FFF?text=T-Shirt+Back'
       ],
-      // Мерки для верха
       measurements: {
         chest: '110 см (ширина груди)',
         length: '72 см (длина по спинке)',
         shoulder: '55 см (ширина плеч)',
         sleeve: '22 см (длина рукава)'
       },
-      isSold: false,
     },
   })
   console.log(`✅ Добавлена вещь: ${tshirt.name}`)
 
-  // 3. Добавляем ДЖИНСЫ
+  // 4. Добавляем ДЖИНСЫ (исправлено: убрано несуществующее поле isSold)
   const jeans = await prisma.item.create({
     data: {
       dropId: drop.id,
@@ -66,9 +67,8 @@ async function main() {
       stock: 3,
       images: [
         'https://placehold.co/600x800/2c3e50/FFF?text=Jeans+Front',
-        'https://placehold.co/600x800/2c3e50/FFF?text=Jeans+Back+Pocket'
+        'https://placehold.co/600x800/2c3e50/FFF?text=Jeans+Back'
       ],
-      // Мерки для низа (абсолютно другой набор!)
       measurements: {
         waist: '80 см (пояс)',
         hip: '105 см (бедра)',
@@ -76,12 +76,11 @@ async function main() {
         inseam: '80 см (длина по внутреннему шву)',
         legOpening: '20 см (ширина штанины внизу)'
       },
-      isSold: false,
     },
   })
   console.log(`✅ Добавлена вещь: ${jeans.name}`)
 
-  console.log(' Наполнение базы данных завершено успешно!')
+  console.log('🎉 Наполнение базы данных завершено успешно!')
 }
 
 main()
